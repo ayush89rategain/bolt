@@ -117,16 +117,16 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <header className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
+            <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-3 rounded-xl shadow-lg shadow-cyan-500/20">
               <MapPin className="text-white" size={28} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Google Maps Scraper</h1>
-              <p className="text-sm text-gray-600 mt-1">Sales Intelligence Tool</p>
+              <h1 className="text-3xl font-bold text-white">Google Maps Scraper</h1>
+              <p className="text-sm text-slate-400 mt-1">Sales Intelligence Tool</p>
             </div>
           </div>
         </div>
@@ -154,35 +154,35 @@ function App() {
         </div>
 
         {(listings.length > 0 || processedListings.length > 0) && (
-          <div className="mb-4 bg-white rounded-lg shadow-md p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-4">
+          <div className="mb-4 bg-slate-800/50 backdrop-blur-xl rounded-xl shadow-2xl p-4 border border-slate-700/50">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowProcessed(false)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition ${
+                  className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
                     !showProcessed
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
+                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                   }`}
                 >
                   Raw Data ({listings.length})
                 </button>
                 <button
                   onClick={() => setShowProcessed(true)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition ${
+                  className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
                     showProcessed
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/25'
+                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                   }`}
                 >
                   Processed Data ({processedListings.length})
                 </button>
               </div>
               {showProcessed && processedListings.length > 0 && (
-                <div className="text-sm text-gray-600">
-                  <span className="font-semibold text-green-600">✓ Verified</span> •
-                  <span className="font-semibold text-blue-600">Deduplicated</span> •
-                  <span>{processedListings.length} unique companies</span>
+                <div className="text-sm text-slate-400">
+                  <span className="font-semibold text-emerald-400">✓ Verified</span> •
+                  <span className="font-semibold text-cyan-400"> Deduplicated</span> •
+                  <span className="text-slate-300"> {processedListings.length} unique companies</span>
                 </div>
               )}
             </div>

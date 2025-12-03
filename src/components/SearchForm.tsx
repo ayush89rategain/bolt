@@ -20,11 +20,11 @@ export function SearchForm({ onStartScraping, isScrapingActive }: SearchFormProp
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Search Parameters</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl shadow-2xl p-6 border border-slate-700/50">
+      <h2 className="text-2xl font-bold text-white mb-6">Search Parameters</h2>
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="businessType" className="block text-sm font-medium text-slate-300 mb-2">
             Business Type
           </label>
           <input
@@ -33,14 +33,14 @@ export function SearchForm({ onStartScraping, isScrapingActive }: SearchFormProp
             value={businessType}
             onChange={(e) => setBusinessType(e.target.value)}
             placeholder="e.g., restaurants, hotels, gyms"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200"
             disabled={isScrapingActive}
             required
           />
         </div>
 
         <div>
-          <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="city" className="block text-sm font-medium text-slate-300 mb-2">
             City
           </label>
           <input
@@ -49,14 +49,14 @@ export function SearchForm({ onStartScraping, isScrapingActive }: SearchFormProp
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="e.g., New York"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200"
             disabled={isScrapingActive}
             required
           />
         </div>
 
         <div>
-          <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="country" className="block text-sm font-medium text-slate-300 mb-2">
             Country
           </label>
           <input
@@ -65,7 +65,7 @@ export function SearchForm({ onStartScraping, isScrapingActive }: SearchFormProp
             value={country}
             onChange={(e) => setCountry(e.target.value)}
             placeholder="e.g., USA"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200"
             disabled={isScrapingActive}
             required
           />
@@ -74,7 +74,7 @@ export function SearchForm({ onStartScraping, isScrapingActive }: SearchFormProp
         <button
           type="submit"
           disabled={isScrapingActive}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+          className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-slate-700 disabled:to-slate-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 disabled:shadow-none"
         >
           <Search size={20} />
           Start Scraping

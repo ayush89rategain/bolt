@@ -50,24 +50,24 @@ export function ProgressTracker({
   if (!isScrapingActive) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Scraping Progress</h2>
+    <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl shadow-2xl p-6 border border-slate-700/50">
+      <h2 className="text-2xl font-bold text-white mb-6">Scraping Progress</h2>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-blue-50 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-blue-600 mb-2">
+        <div className="bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border border-cyan-500/20 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-cyan-400 mb-2">
             <Clock size={20} />
             <span className="text-sm font-medium">Time Elapsed</span>
           </div>
-          <p className="text-2xl font-bold text-gray-800">{formatTime(elapsedTime)}</p>
+          <p className="text-2xl font-bold text-white">{formatTime(elapsedTime)}</p>
         </div>
 
-        <div className="bg-green-50 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-green-600 mb-2">
+        <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-emerald-400 mb-2">
             <Database size={20} />
             <span className="text-sm font-medium">Records Scraped</span>
           </div>
-          <p className="text-2xl font-bold text-gray-800">{recordsScraped}</p>
+          <p className="text-2xl font-bold text-white">{recordsScraped}</p>
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export function ProgressTracker({
         {isPaused ? (
           <button
             onClick={onResume}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25"
           >
             <Play size={20} />
             Resume
@@ -83,7 +83,7 @@ export function ProgressTracker({
         ) : (
           <button
             onClick={onPause}
-            className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+            className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25"
           >
             <Pause size={20} />
             Pause
@@ -92,7 +92,7 @@ export function ProgressTracker({
 
         <button
           onClick={onStop}
-          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+          className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-500/25"
         >
           <Square size={20} />
           Stop
@@ -100,8 +100,8 @@ export function ProgressTracker({
       </div>
 
       {isPaused && (
-        <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <p className="text-sm text-yellow-800 font-medium">Scraping paused. Click Resume to continue.</p>
+        <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+          <p className="text-sm text-amber-300 font-medium">Scraping paused. Click Resume to continue.</p>
         </div>
       )}
     </div>
