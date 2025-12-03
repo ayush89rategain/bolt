@@ -4,10 +4,11 @@ import { ProgressTracker } from './components/ProgressTracker';
 import { DataTable } from './components/DataTable';
 import { SearchHistory } from './components/SearchHistory';
 import { AuthModal } from './components/AuthModal';
+import { SearchLogs } from './components/SearchLogs';
 import { GoogleMapsScraper } from './services/scraper';
 import { Listing, supabase } from './lib/supabase';
 import { exportToCSV, exportToExcel } from './utils/exportUtils';
-import { MapPin, LogOut, User } from 'lucide-react';
+import { MapPin, LogOut, LogIn, Shield } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 
 interface ProcessedListing {
@@ -33,13 +34,6 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut, loading } = useAuth();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      setShowAuthModal(true);
-    } else {
-      setShowAuthModal(false);
-    }
-  }, [user, loading]);
 
   const handleStartScraping = async (businessType: string, location: string) => {
     if (!user) {
@@ -60,6 +54,22 @@ function App() {
         setCacheMessage('Using cached results from a previous search. No API credits used!');
         setCurrentSessionId(cachedSessionId);
         await loadSessionData(cachedSessionId);
+
+        const { data: cachedData } = await supabase
+          .from('listings')
+          .select('id')
+          .eq('session_id', cachedSessionId);
+
+        await supabase.rpc('log_search', {
+          p_user_id: user.id,
+          p_user_email: user.email,
+          p_session_id: cachedSessionId,
+          p_business_type: businessType,
+          p_location: location,
+          p_result_count: cachedData?.length || 0,
+          p_was_cached: true
+        });
+
         setIsScrapingActive(false);
         return;
       }
@@ -69,7 +79,23 @@ function App() {
 
       scraper.scrapeListings(businessType, location, (newListing) => {
         setListings((prev) => [...prev, newListing]);
-      }).then(() => {
+      }).then(async () => {
+        const { data: sessionData } = await supabase
+          .from('scraping_sessions')
+          .select('total_records')
+          .eq('id', sessionId)
+          .maybeSingle();
+
+        await supabase.rpc('log_search', {
+          p_user_id: user.id,
+          p_user_email: user.email || '',
+          p_session_id: sessionId,
+          p_business_type: businessType,
+          p_location: location,
+          p_result_count: sessionData?.total_records || 0,
+          p_was_cached: false
+        });
+
         setIsScrapingActive(false);
       }).catch((error) => {
         console.error('Scraping error:', error);
@@ -97,12 +123,29 @@ function App() {
   };
 
   const handleUseSearch = async (sessionId: string, businessType: string, location: string) => {
+    if (!user) return;
+
     setListings([]);
     setProcessedListings([]);
     setCurrentSessionId(sessionId);
     setCacheMessage('Loaded from search history. No API credits used!');
     await loadSessionData(sessionId);
     await loadProcessedListings();
+
+    const { data: cachedData } = await supabase
+      .from('listings')
+      .select('id')
+      .eq('session_id', sessionId);
+
+    await supabase.rpc('log_search', {
+      p_user_id: user.id,
+      p_user_email: user.email || '',
+      p_session_id: sessionId,
+      p_business_type: businessType,
+      p_location: location,
+      p_result_count: cachedData?.length || 0,
+      p_was_cached: true
+    });
   };
 
   const handlePause = () => {
@@ -186,98 +229,138 @@ function App() {
                 <p className="text-sm text-slate-400 mt-1">Sales Intelligence Tool</p>
               </div>
             </div>
-            {user && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-slate-300">
-                  <User size={20} />
-                  <span className="text-sm">{user.email}</span>
-                </div>
+            <div className="flex items-center gap-3">
+              {user ? (
+                <>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                    <Shield className="text-emerald-400" size={18} />
+                    <div className="flex flex-col">
+                      <span className="text-xs text-emerald-400 font-semibold">Verified</span>
+                      <span className="text-xs text-slate-300">{user.email}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => signOut()}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-xl transition-all duration-200"
+                  >
+                    <LogOut size={18} />
+                    <span className="text-sm font-medium">Sign Out</span>
+                  </button>
+                </>
+              ) : (
                 <button
-                  onClick={() => signOut()}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-xl transition-all duration-200"
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-cyan-500/25"
                 >
-                  <LogOut size={18} />
-                  <span className="text-sm font-medium">Sign Out</span>
+                  <LogIn size={20} />
+                  <span>Sign In</span>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!user && (
+          <div className="mb-8 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border border-cyan-500/30 rounded-xl p-8 text-center">
+            <Shield className="mx-auto text-cyan-400 mb-4" size={48} />
+            <h2 className="text-2xl font-bold text-white mb-2">Authentication Required</h2>
+            <p className="text-slate-300 mb-4">
+              Please sign in with your verified RateGain email address to access the scraper.
+            </p>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-cyan-500/25"
+            >
+              <LogIn size={20} />
+              <span>Sign In with RateGain Email</span>
+            </button>
+          </div>
+        )}
+
         {user && (
-          <div className="mb-8">
-            <SearchHistory onUseSearch={handleUseSearch} />
-          </div>
-        )}
-
-        {cacheMessage && (
-          <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-            <p className="text-emerald-300 font-medium">{cacheMessage}</p>
-          </div>
-        )}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-1">
-            <SearchForm
-              onStartScraping={handleStartScraping}
-              isScrapingActive={isScrapingActive}
-            />
-          </div>
-
-          <div className="lg:col-span-2">
-            <ProgressTracker
-              isScrapingActive={isScrapingActive}
-              isPaused={isPaused}
-              recordsScraped={listings.length}
-              onPause={handlePause}
-              onResume={handleResume}
-              onStop={handleStop}
-            />
-          </div>
-        </div>
-
-        {(listings.length > 0 || processedListings.length > 0) && (
-          <div className="mb-4 bg-slate-800/50 backdrop-blur-xl rounded-xl shadow-2xl p-4 border border-slate-700/50">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowProcessed(false)}
-                  className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
-                    !showProcessed
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
-                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-                  }`}
-                >
-                  Raw Data ({listings.length})
-                </button>
-                <button
-                  onClick={() => setShowProcessed(true)}
-                  className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
-                    showProcessed
-                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/25'
-                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-                  }`}
-                >
-                  Processed Data ({processedListings.length})
-                </button>
-              </div>
-              {showProcessed && processedListings.length > 0 && (
-                <div className="text-sm text-slate-400">
-                  <span className="font-semibold text-emerald-400">✓ Verified</span> •
-                  <span className="font-semibold text-cyan-400"> Deduplicated</span> •
-                  <span className="text-slate-300"> {processedListings.length} unique companies</span>
-                </div>
-              )}
+          <>
+            <div className="mb-8">
+              <SearchLogs />
             </div>
-          </div>
-        )}
 
-        <DataTable
-          listings={showProcessed ? processedListings as any : listings}
-          onExportCSV={handleExportCSV}
-          onExportExcel={handleExportExcel}
-        />
+            <div className="mb-8">
+              <SearchHistory onUseSearch={handleUseSearch} />
+            </div>
+
+            {cacheMessage && (
+              <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                <p className="text-emerald-300 font-medium">{cacheMessage}</p>
+              </div>
+            )}
+          </>
+        )}
+        {user && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-1">
+                <SearchForm
+                  onStartScraping={handleStartScraping}
+                  isScrapingActive={isScrapingActive}
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <ProgressTracker
+                  isScrapingActive={isScrapingActive}
+                  isPaused={isPaused}
+                  recordsScraped={listings.length}
+                  onPause={handlePause}
+                  onResume={handleResume}
+                  onStop={handleStop}
+                />
+              </div>
+            </div>
+
+            {(listings.length > 0 || processedListings.length > 0) && (
+              <div className="mb-4 bg-slate-800/50 backdrop-blur-xl rounded-xl shadow-2xl p-4 border border-slate-700/50">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowProcessed(false)}
+                      className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
+                        !showProcessed
+                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
+                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      Raw Data ({listings.length})
+                    </button>
+                    <button
+                      onClick={() => setShowProcessed(true)}
+                      className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
+                        showProcessed
+                          ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/25'
+                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      Processed Data ({processedListings.length})
+                    </button>
+                  </div>
+                  {showProcessed && processedListings.length > 0 && (
+                    <div className="text-sm text-slate-400">
+                      <span className="font-semibold text-emerald-400">✓ Verified</span> •
+                      <span className="font-semibold text-cyan-400"> Deduplicated</span> •
+                      <span className="text-slate-300"> {processedListings.length} unique companies</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <DataTable
+              listings={showProcessed ? processedListings as any : listings}
+              onExportCSV={handleExportCSV}
+              onExportExcel={handleExportExcel}
+            />
+          </>
+        )}
       </main>
     </div>
     </>

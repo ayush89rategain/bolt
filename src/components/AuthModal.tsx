@@ -22,17 +22,31 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError('');
     setLoading(true);
 
+    if (!email.toLowerCase().endsWith('@rategain.com')) {
+      setError('Only RateGain email addresses (@rategain.com) are allowed');
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isSignUp) {
         await signUp(email, password);
-        setError('Account created! Please sign in.');
+        setError('Account created! Please check your RateGain email to verify your account before signing in.');
+        setEmail('');
+        setPassword('');
         setIsSignUp(false);
       } else {
         await signIn(email, password);
         onClose();
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      if (err.message.includes('Email not confirmed')) {
+        setError('Please verify your email address first. Check your RateGain inbox for the confirmation link.');
+      } else if (err.message.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Make sure your email is verified.');
+      } else {
+        setError(err.message || 'An error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -51,8 +65,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <h2 className="text-3xl font-bold text-white mb-2">
           {isSignUp ? 'Create Account' : 'Welcome Back'}
         </h2>
-        <p className="text-slate-400 mb-6">
+        <p className="text-slate-400 mb-2">
           {isSignUp ? 'Sign up to start scraping' : 'Sign in to continue'}
+        </p>
+        <p className="text-xs text-cyan-400 mb-6">
+          RateGain email addresses only (@rategain.com)
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,7 +84,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                placeholder="your@email.com"
+                placeholder="your.name@rategain.com"
                 required
               />
             </div>
