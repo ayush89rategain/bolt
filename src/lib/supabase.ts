@@ -26,8 +26,29 @@ export interface Listing {
   name: string;
   description: string | null;
   rating: number | null;
+  reviews: number | null;
+  type: string | null;
   website: string | null;
   address: string | null;
   phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  opening_hours: any | null;
+  price_level: string | null;
+  thumbnail: string | null;
+  place_id: string | null;
+  created_at: string;
+}
+
+export interface SearchCache {
+  id: string;
+  user_id: string;
+  search_query: string;
+  business_type: string;
+  location: string;
+  session_id: string;
+  result_count: number;
+  cached_at: string;
+  expires_at: string;
   created_at: string;
 }

@@ -46,6 +46,9 @@ export function DataTable({ listings, onExportCSV, onExportExcel }: DataTablePro
                 Name
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Type
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Rating
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -57,22 +60,33 @@ export function DataTable({ listings, onExportCSV, onExportExcel }: DataTablePro
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Website
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Description
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-700/30">
             {listings.map((listing) => (
               <tr key={listing.id} className="hover:bg-slate-700/20 transition-colors duration-150">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                  {listing.name}
+                <td className="px-6 py-4 text-sm font-medium text-white max-w-xs">
+                  <div className="line-clamp-2">{listing.name}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                  {listing.type ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      {listing.type}
+                    </span>
+                  ) : (
+                    <span className="text-slate-500">N/A</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
                   {listing.rating ? (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                      ⭐ {listing.rating}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        ⭐ {listing.rating}
+                      </span>
+                      {listing.reviews ? (
+                        <span className="text-xs text-slate-500">{listing.reviews} reviews</span>
+                      ) : null}
+                    </div>
                   ) : (
                     <span className="text-slate-500">N/A</span>
                   )}
@@ -96,9 +110,6 @@ export function DataTable({ listings, onExportCSV, onExportExcel }: DataTablePro
                   ) : (
                     <span className="text-slate-500">N/A</span>
                   )}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-300 max-w-md">
-                  <div className="line-clamp-2">{listing.description || <span className="text-slate-500">N/A</span>}</div>
                 </td>
               </tr>
             ))}

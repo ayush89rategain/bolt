@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { SearchForm } from './components/SearchForm';
 import { ProgressTracker } from './components/ProgressTracker';
 import { DataTable } from './components/DataTable';
+import { SearchHistory } from './components/SearchHistory';
+import { AuthModal } from './components/AuthModal';
 import { GoogleMapsScraper } from './services/scraper';
 import { Listing, supabase } from './lib/supabase';
 import { exportToCSV, exportToExcel } from './utils/exportUtils';
-import { MapPin } from 'lucide-react';
+import { MapPin, LogOut, User } from 'lucide-react';
+import { useAuth } from './contexts/AuthContext';
 
 interface ProcessedListing {
   id: string;
@@ -26,16 +29,42 @@ function App() {
   const [showProcessed, setShowProcessed] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [scraper] = useState(() => new GoogleMapsScraper());
+  const [cacheMessage, setCacheMessage] = useState<string>('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const { user, signOut, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      setShowAuthModal(true);
+    } else {
+      setShowAuthModal(false);
+    }
+  }, [user, loading]);
 
   const handleStartScraping = async (businessType: string, location: string) => {
+    if (!user) {
+      return;
+    }
+
     setListings([]);
     setProcessedListings([]);
+    setCacheMessage('');
     setIsScrapingActive(true);
     setIsPaused(false);
     setShowProcessed(false);
 
     try {
-      const sessionId = await scraper.startSession(businessType, location);
+      const cachedSessionId = await scraper.checkCache(businessType, location);
+
+      if (cachedSessionId) {
+        setCacheMessage('Using cached results from a previous search. No API credits used!');
+        setCurrentSessionId(cachedSessionId);
+        await loadSessionData(cachedSessionId);
+        setIsScrapingActive(false);
+        return;
+      }
+
+      const sessionId = await scraper.startSession(businessType, location, user.id);
       setCurrentSessionId(sessionId);
 
       scraper.scrapeListings(businessType, location, (newListing) => {
@@ -50,6 +79,30 @@ function App() {
       console.error('Failed to start session:', error);
       setIsScrapingActive(false);
     }
+  };
+
+  const loadSessionData = async (sessionId: string) => {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error loading session data:', error);
+      return;
+    }
+
+    setListings(data || []);
+  };
+
+  const handleUseSearch = async (sessionId: string, businessType: string, location: string) => {
+    setListings([]);
+    setProcessedListings([]);
+    setCurrentSessionId(sessionId);
+    setCacheMessage('Loaded from search history. No API credits used!');
+    await loadSessionData(sessionId);
+    await loadProcessedListings();
   };
 
   const handlePause = () => {
@@ -117,22 +170,53 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <header className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
+    <>
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <header className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-3 rounded-xl shadow-lg shadow-cyan-500/20">
-              <MapPin className="text-white" size={28} />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-3 rounded-xl shadow-lg shadow-cyan-500/20">
+                <MapPin className="text-white" size={28} />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Google Maps Scraper</h1>
+                <p className="text-sm text-slate-400 mt-1">Sales Intelligence Tool</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Google Maps Scraper</h1>
-              <p className="text-sm text-slate-400 mt-1">Sales Intelligence Tool</p>
-            </div>
+            {user && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <User size={20} />
+                  <span className="text-sm">{user.email}</span>
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-xl transition-all duration-200"
+                >
+                  <LogOut size={18} />
+                  <span className="text-sm font-medium">Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {user && (
+          <div className="mb-8">
+            <SearchHistory onUseSearch={handleUseSearch} />
+          </div>
+        )}
+
+        {cacheMessage && (
+          <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+            <p className="text-emerald-300 font-medium">{cacheMessage}</p>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-1">
             <SearchForm
@@ -196,6 +280,7 @@ function App() {
         />
       </main>
     </div>
+    </>
   );
 }
 

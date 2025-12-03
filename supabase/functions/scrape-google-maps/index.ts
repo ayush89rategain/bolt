@@ -43,9 +43,17 @@ Deno.serve(async (req: Request) => {
       name: result.title || result.name || "Unknown",
       description: result.description || "",
       rating: result.rating || 0,
+      reviews: result.reviews || 0,
+      type: result.type || "",
       website: result.website || "",
       address: result.address || "",
       phone: result.phone || "",
+      latitude: result.gps_coordinates?.latitude || null,
+      longitude: result.gps_coordinates?.longitude || null,
+      opening_hours: result.opening_hours || null,
+      price_level: result.price || "",
+      thumbnail: result.thumbnail || "",
+      place_id: result.place_id || "",
     }));
 
     return new Response(

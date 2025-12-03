@@ -8,13 +8,41 @@ export class GoogleMapsScraper {
   private isRunning = false;
   private isPaused = false;
   private abortController: AbortController | null = null;
+  private userId: string | null = null;
 
-  async startSession(businessType: string, location: string): Promise<string> {
+  async checkCache(businessType: string, location: string): Promise<string | null> {
+    const searchQuery = `${businessType.toLowerCase().trim()}|${location.toLowerCase().trim()}`;
+
+    const { data, error } = await supabase
+      .from('search_cache')
+      .select('*')
+      .eq('search_query', searchQuery)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking cache:', error);
+      return null;
+    }
+
+    if (data) {
+      return data.session_id;
+    }
+
+    return null;
+  }
+
+  async startSession(businessType: string, location: string, userId: string): Promise<string> {
+    this.userId = userId;
+    const searchQuery = `${businessType.toLowerCase().trim()}|${location.toLowerCase().trim()}`;
+
     const { data, error } = await supabase
       .from('scraping_sessions')
       .insert({
+        user_id: userId,
         business_type: businessType,
         location: location,
+        search_query: searchQuery,
         status: 'running',
         total_records: 0,
         processing_status: 'pending',
@@ -92,10 +120,18 @@ export class GoogleMapsScraper {
             name: listing.name,
             description: listing.description,
             rating: listing.rating,
+            reviews: listing.reviews,
+            type: listing.type,
             website: listing.website,
             raw_website: listing.website,
             address: listing.address,
             phone: listing.phone,
+            latitude: listing.latitude,
+            longitude: listing.longitude,
+            opening_hours: listing.opening_hours,
+            price_level: listing.price_level,
+            thumbnail: listing.thumbnail,
+            place_id: listing.place_id,
           })
           .select()
           .single();
@@ -155,11 +191,30 @@ export class GoogleMapsScraper {
   }
 
   private async completeSession() {
-    if (this.sessionId) {
+    if (this.sessionId && this.userId) {
       await supabase
         .from('scraping_sessions')
         .update({ status: 'completed', completed_at: new Date().toISOString() })
         .eq('id', this.sessionId);
+
+      const { data: session } = await supabase
+        .from('scraping_sessions')
+        .select('business_type, location, search_query, total_records')
+        .eq('id', this.sessionId)
+        .maybeSingle();
+
+      if (session) {
+        await supabase
+          .from('search_cache')
+          .insert({
+            user_id: this.userId,
+            search_query: session.search_query,
+            business_type: session.business_type,
+            location: session.location,
+            session_id: this.sessionId,
+            result_count: session.total_records,
+          });
+      }
     }
     this.isRunning = false;
   }
